@@ -1,10 +1,10 @@
 """
-The system trains BERT (or any other transformer model like RoBERTa, DistilBERT etc.) on the SNLI + MultiNLI (AllNLI) dataset
+The system trains BERT (or any other transformer model like RoBERTa, DistilBERT etc.) on the CMNLI dataset
 with softmax loss function. At every 1000 training steps, the model is evaluated on the
 STS benchmark dataset
 
 Usage:
-python training_nli.py
+python training_cmnli.py
 
 OR
 python training_nli.py pretrained_transformer_model_name
@@ -31,14 +31,14 @@ logging.basicConfig(format='%(asctime)s - %(message)s',
 #### /print debug information to stdout
 
 #You can specify any huggingface/transformers pre-trained model here, for example, bert-base-uncased, roberta-base, xlm-roberta-base
-model_name = sys.argv[1] if len(sys.argv) > 1 else 'bert-base-uncased'
+model_name = sys.argv[1] if len(sys.argv) > 1 else 'bert-base-chinese'
 
 # Read the dataset
 batch_size = 16
-nli_reader = NLIDataReader('../datasets/AllNLI')
-sts_reader = STSBenchmarkDataReader('../datasets/stsbenchmark')
-train_num_labels = nli_reader.get_num_labels()
-model_save_path = 'output/training_nli_'+model_name.replace("/", "-")+'-'+datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+cmnli_reader = CMNLIDataReader('../datasets/CMNLI')
+csts_reader = CSTSBenchmarkDataReader('../datasets/CSTS-B')
+train_num_labels = cmnli_reader.get_num_labels()
+model_save_path = 'output/training_cmnli_'+model_name.replace("/", "-")+'-'+datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
 
 # Use Huggingface/transformers model (like BERT, RoBERTa, XLNet, XLM-R) for mapping tokens to embeddings
@@ -54,15 +54,15 @@ model = SentenceTransformer(modules=[word_embedding_model, pooling_model])
 
 
 # Convert the dataset to a DataLoader ready for training
-logging.info("Read AllNLI train dataset")
-train_data = SentencesDataset(nli_reader.get_examples('train.gz'), model=model)
+logging.info("Read CMNLI train dataset")
+train_data = SentencesDataset(cmnli_reader.get_examples('train'), model=model)
 train_dataloader = DataLoader(train_data, shuffle=True, batch_size=batch_size)
 train_loss = losses.SoftmaxLoss(model=model, sentence_embedding_dimension=model.get_sentence_embedding_dimension(), num_labels=train_num_labels)
 
 
 
 logging.info("Read STSbenchmark dev dataset")
-dev_data = SentencesDataset(examples=sts_reader.get_examples('sts-dev.csv'), model=model)
+dev_data = SentencesDataset(examples=csts_reader.get_examples('cnsd-sts-dev.txt'), model=model)
 dev_dataloader = DataLoader(dev_data, shuffle=False, batch_size=batch_size)
 evaluator = EmbeddingSimilarityEvaluator(dev_dataloader)
 
@@ -92,7 +92,7 @@ model.fit(train_objectives=[(train_dataloader, train_loss)],
 ##############################################################################
 
 model = SentenceTransformer(model_save_path)
-test_data = SentencesDataset(examples=sts_reader.get_examples("sts-test.csv"), model=model)
+test_data = SentencesDataset(examples=csts_reader.get_examples("cnsd-sts-test.txt"), model=model)
 test_dataloader = DataLoader(test_data, shuffle=False, batch_size=batch_size)
 evaluator = EmbeddingSimilarityEvaluator(test_dataloader)
 
