@@ -95,5 +95,5 @@ class CSTSBenchmarkDataReader(CSTSDataReader):
     Reader especially for the CNSD-STS benchmark dataset. There, the sentences are in column 1 and 2, the score is in column 3.
     Scores are normalized from 0...5 to 0...1
     """
-    def __init__(self, dataset_folder, s1_col_idx=1, s2_col_idx=3, score_col_idx=3, normalize_scores=True, min_score=0, max_score=5):
+    def __init__(self, dataset_folder, s1_col_idx=1, s2_col_idx=2, score_col_idx=3, normalize_scores=True, min_score=0, max_score=5):
         super().__init__(dataset_folder=dataset_folder, s1_col_idx=s1_col_idx, s2_col_idx=s2_col_idx, score_col_idx=score_col_idx, normalize_scores=normalize_scores, min_score=min_score, max_score=max_score)

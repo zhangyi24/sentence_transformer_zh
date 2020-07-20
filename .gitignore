@@ -1,5 +1,6 @@
 .idea
 *.pyc
+examples/applications/*.pkl
 examples/datasets/*/
 examples/datasets/*.gz
 examples/output

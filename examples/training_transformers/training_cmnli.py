@@ -61,7 +61,7 @@ train_loss = losses.SoftmaxLoss(model=model, sentence_embedding_dimension=model.
 
 
 
-logging.info("Read STSbenchmark dev dataset")
+logging.info("Read CSTSbenchmark dev dataset")
 dev_data = SentencesDataset(examples=csts_reader.get_examples('cnsd-sts-dev.txt'), model=model)
 dev_dataloader = DataLoader(dev_data, shuffle=False, batch_size=batch_size)
 evaluator = EmbeddingSimilarityEvaluator(dev_dataloader)
