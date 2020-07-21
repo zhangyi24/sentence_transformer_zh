@@ -5,6 +5,7 @@ examples/datasets/*/
 examples/datasets/*.gz
 examples/output
 sentence_transformers.egg-info
+sandbox/
 dist/
 nr_*/
 /examples/training_transformers/output
