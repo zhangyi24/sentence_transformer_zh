@@ -11,7 +11,6 @@ python training_nli.py pretrained_transformer_model_name
 """
 import os
 import sys
-
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), '../..'))
 
 import argparse
@@ -59,8 +58,6 @@ if __name__ == '__main__':
                                    pooling_mode_max_tokens=False)
 
     model = SentenceTransformer(modules=[word_embedding_model, pooling_model])
-    if torch.cuda.device_count() > 1:
-        model = nn.DataParallel(model)
 
     # Convert the dataset to a DataLoader ready for training
     logging.info("Read CMNLI train dataset")

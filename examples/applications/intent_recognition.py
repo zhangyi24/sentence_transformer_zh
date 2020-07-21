@@ -24,76 +24,93 @@ datasets_dir = '../datasets/intent/zj'
 trainset_path = os.path.join(datasets_dir, 'train.tsv')
 devset_path = os.path.join(datasets_dir, 'dev.tsv')
 testset_path = os.path.join(datasets_dir, 'test.tsv')
-embedding_cache_path = 'embedding.pkl'
+embedding_cache_path = 'embeddings.pkl'
 
 def get_dataset(dataset_path):
-    dataset = {}
+    sents = []
+    labels = []
     with open(dataset_path, 'r', encoding='utf-8') as f:
         reader = csv.reader(f, delimiter='\t')
-        for row in reader:
-            dataset[row[1]] = row[0]
-    return dataset
+        for row_id, row in enumerate(reader):
+            if row_id == 0:
+                continue
+            labels.append(row[0])
+            sents.append(row[1])
+    return sents, labels
 
 
-trainset = get_dataset(trainset_path)
-devset = get_dataset(devset_path)
-testset = get_dataset(testset_path)
+train_sents, train_labels = get_dataset(trainset_path)
+dev_sents, dev_labels = get_dataset(devset_path)
+test_sents, test_labels = get_dataset(testset_path)
 
-corpus = list(trainset.keys())
-
+corpus = train_sents
 if not os.path.exists(embedding_cache_path):
-    embeddings_dict = {}
     print('encoding corpus...')
     corpus_embeddings = model.encode(corpus)
-    for sentence, embedding in zip(corpus, corpus_embeddings):
-        embeddings_dict[sentence] = embedding
     print('dumping corpus embeddings...')
     with open(embedding_cache_path, 'wb') as f:
-        pickle.dump(embeddings_dict, f)
+        pickle.dump(corpus_embeddings, f)
 else:
     print('loading corpus embeddings...')
     with open(embedding_cache_path, 'rb') as f:
-        embeddings_dict = pickle.load(f)
-        corpus_embeddings = list(embeddings_dict.values())
+        corpus_embeddings = pickle.load(f)
 
 
-
-# Query sentences:
-print('encoding queries...')
-queries = list(testset.keys())[-10:]
-query_embeddings = model.encode(queries)
-
-# Find the closest 5 sentences of the corpus for each query sentence based on cosine similarity
-print('KNN...')
-for query, query_embedding in zip(queries, query_embeddings):
-    distances = scipy.spatial.distance.cdist([query_embedding], corpus_embeddings, "cosine")[0]
-
-    results = zip(range(len(distances)), distances)
-    results = sorted(results, key=lambda x: x[1])
-
-    print("\n\n======================\n\n")
-    print("Query:", query)
-    print("\nTop 5 most similar sentences in corpus:")
-
-    for idx, distance in results[0:5]:
-        print(corpus[idx].strip(), "(Score: %.4f)" % (1-distance))
 
 # # Query sentences:
 # print('encoding queries...')
-# queries = list(testset.keys())
+# queries = ['没钱没钱']
 # query_embeddings = model.encode(queries)
 #
 # # Find the closest 5 sentences of the corpus for each query sentence based on cosine similarity
 # print('KNN...')
-# distances_matrix = scipy.spatial.distance.cdist(query_embeddings, corpus_embeddings, "cosine")
-# pred_idx = np.argmax(distances_matrix, axis=1)
-# true_num = 0
-# for query, pred_id in zip(queries, pred_idx):
-#     nearest_sent = corpus[int(pred_id)]
-#     if testset[query] == trainset[nearest_sent]:
-#         true_num += 1
-# print(true_num / len(queries))
+# for query, query_embedding in zip(queries, query_embeddings):
+#     distances = scipy.spatial.distance.cdist([query_embedding], train_sents_embeddings, "cosine")[0]
+#
+#     results = zip(range(len(distances)), distances)
+#     results = sorted(results, key=lambda x: x[1])
+#
+#     print("\n\n======================\n\n")
+#     print("Query:", query)
+#     print("\nTop 5 most similar sentences in corpus:")
+#
+#     for idx, distance in results[0:5]:
+#         print(corpus[idx].strip(), "(Score: %.4f)" % (1-distance))
 
+# Query sentences:
+print('encoding queries...')
+queries = test_sents
+query_embeddings = model.encode(queries)
+# Find the closest 5 sentences of the corpus for each query sentence based on cosine similarity
+print('KNN...')
+distances_matrix = scipy.spatial.distance.cdist(query_embeddings, corpus_embeddings, "cosine")
+pred_idx = np.argmin(distances_matrix, axis=1)
+true_num = 0
+for query_id, query in enumerate(queries):
+    pred_id = pred_idx[query_id]
+    nearest_sent = corpus[pred_id]
+    if test_labels[query_id] == train_labels[pred_id]:
+        true_num += 1
+    # print(query, nearest_sent, test_labels[query_id], train_labels[pred_id])
+print(true_num / len(queries))
+
+
+# Query sentences:
+print('encoding queries...')
+queries = dev_sents
+query_embeddings = model.encode(queries)
+# Find the closest 5 sentences of the corpus for each query sentence based on cosine similarity
+print('KNN...')
+distances_matrix = scipy.spatial.distance.cdist(query_embeddings, corpus_embeddings, "cosine")
+pred_idx = np.argmin(distances_matrix, axis=1)
+true_num = 0
+for query_id, query in enumerate(queries):
+    pred_id = pred_idx[query_id]
+    nearest_sent = corpus[pred_id]
+    if dev_labels[query_id] == train_labels[pred_id]:
+        true_num += 1
+    # print(query, nearest_sent, dev_labels[query_id], train_labels[pred_id])
+print(true_num / len(queries))
 
 
 
