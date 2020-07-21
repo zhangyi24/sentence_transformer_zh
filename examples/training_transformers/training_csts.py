@@ -1,9 +1,12 @@
 """
-This example loads the pre-trained SentenceTransformer model 'bert-base-nli-mean-tokens' from the server.
-It then fine-tunes this model for some epochs on the CSTS-B dataset.
+This examples trains BERT (or any other transformer model like RoBERTa, DistilBERT etc.) for the CSTS-B from scratch. It generates sentence embeddings
+that can be compared using cosine-similarity to measure the similarity.
 
-Note: In this example, you must specify a SentenceTransformer model.
-If you want to fine-tune a huggingface/transformers model like bert-base-uncased, see training_nli.py and training_stsbenchmark.py
+Usage:
+python training_nli.py
+
+OR
+python training_nli.py pretrained_transformer_model_name
 """
 import os
 import sys
@@ -12,15 +15,17 @@ sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), '../..
 import argparse
 from torch.utils.data import DataLoader
 import math
-from sentence_transformers import SentenceTransformer,  SentencesDataset, LoggingHandler, losses
+from sentence_transformers import SentenceTransformer,  SentencesDataset, LoggingHandler, losses, models
 from sentence_transformers.evaluation import EmbeddingSimilarityEvaluator
 from sentence_transformers.readers import CSTSBenchmarkDataReader
 import logging
 from datetime import datetime
+import sys
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--model", "-m", default='output/cmnli_bert-base-chinese', type=str, help="model name or model dir")
+    parser.add_argument("--model", "-m", default='bert-base-chinese', type=str, help="model name or model dir")
     parser.add_argument("--num_epochs", "-e", default=10, type=int, help="number of epochs")
     args = parser.parse_args()
     model_name = args.model
@@ -32,23 +37,31 @@ if __name__ == '__main__':
                         handlers=[LoggingHandler()])
     #### /print debug information to stdout
 
-
+    # Read the dataset
     train_batch_size = 16
-    model_save_path = 'output/training_csts_continue_training-'+model_name+'-'+datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    model_save_path = 'output/training_csts_'+model_name.replace("/", "-")+'-'+datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     csts_reader = CSTSBenchmarkDataReader('../datasets/CSTS-B', normalize_scores=True)
 
-    # Load a pre-trained sentence transformer model
-    model = SentenceTransformer(model_name)
+    # Use Huggingface/transformers model (like BERT, RoBERTa, XLNet, XLM-R) for mapping tokens to embeddings
+    word_embedding_model = models.Transformer(model_name)
+
+    # Apply mean pooling to get one fixed sized sentence vector
+    pooling_model = models.Pooling(word_embedding_model.get_word_embedding_dimension(),
+                                   pooling_mode_mean_tokens=True,
+                                   pooling_mode_cls_token=False,
+                                   pooling_mode_max_tokens=False)
+
+    model = SentenceTransformer(modules=[word_embedding_model, pooling_model])
 
     # Convert the dataset to a DataLoader ready for training
-    logging.info("Read CSTS-B  train dataset")
-    train_data = SentencesDataset(csts_reader.get_examples('cnsd-sts-train.txt'), model)
+    logging.info("Read CSTS-B train dataset")
+    train_data = SentencesDataset(csts_reader.get_examples("cnsd-sts-train.txt"), model)
     train_dataloader = DataLoader(train_data, shuffle=True, batch_size=train_batch_size)
     train_loss = losses.CosineSimilarityLoss(model=model)
 
 
     logging.info("Read CSTS-B dev dataset")
-    dev_data = SentencesDataset(examples=csts_reader.get_examples('cnsd-sts-dev.txt'), model=model)
+    dev_data = SentencesDataset(examples=csts_reader.get_examples("cnsd-sts-dev.txt"), model=model)
     dev_dataloader = DataLoader(dev_data, shuffle=False, batch_size=train_batch_size)
     evaluator = EmbeddingSimilarityEvaluator(dev_dataloader)
 
