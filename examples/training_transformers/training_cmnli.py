@@ -15,6 +15,8 @@ import sys
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), '../..'))
 
 import argparse
+import torch
+import torch.nn as nn
 from torch.utils.data import DataLoader
 import math
 from sentence_transformers import models, losses
@@ -57,6 +59,8 @@ if __name__ == '__main__':
                                    pooling_mode_max_tokens=False)
 
     model = SentenceTransformer(modules=[word_embedding_model, pooling_model])
+    if torch.cuda.device_count() > 1:
+        model = nn.DataParallel(model)
 
     # Convert the dataset to a DataLoader ready for training
     logging.info("Read CMNLI train dataset")
