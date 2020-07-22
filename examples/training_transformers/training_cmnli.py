@@ -30,6 +30,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", "-m", default='bert-base-chinese', type=str, help="model name or model dir")
     parser.add_argument("--num_epochs", "-e", default=1, type=int, help="number of epochs")
+    parser.add_argument("--pooling", "-p", default='mean', type=str, help="pooling method", choices=["mean", "cls", "max"])
     args = parser.parse_args()
     model_name = args.model
     num_epochs = args.num_epochs
@@ -45,17 +46,17 @@ if __name__ == '__main__':
     cmnli_reader = CMNLIDataReader('../datasets/CMNLI')
     csts_reader = CSTSBenchmarkDataReader('../datasets/CSTS-B')
     train_num_labels = cmnli_reader.get_num_labels()
-    model_save_path = 'output/training_cmnli_' + model_name.replace("/", "-") + '-' + datetime.now().strftime(
-        "%Y-%m-%d_%H-%M-%S")
+    model_save_path = 'output/%s-%s-cmnli-%s' % (model_name.rstrip("/").split("/")[-1], args.pooling, datetime.now().strftime(
+        "%Y-%m-%d_%H-%M-%S"))
 
     # Use Huggingface/transformers model (like BERT, RoBERTa, XLNet, XLM-R) for mapping tokens to embeddings
     word_embedding_model = models.Transformer(model_name)
 
     # Apply mean pooling to get one fixed sized sentence vector
     pooling_model = models.Pooling(word_embedding_model.get_word_embedding_dimension(),
-                                   pooling_mode_mean_tokens=True,
-                                   pooling_mode_cls_token=False,
-                                   pooling_mode_max_tokens=False)
+                                   pooling_mode_mean_tokens=args.pooling == 'mean',
+                                   pooling_mode_cls_token=args.pooling == 'cls',
+                                   pooling_mode_max_tokens=args.pooling == 'max')
 
     model = SentenceTransformer(modules=[word_embedding_model, pooling_model])
 

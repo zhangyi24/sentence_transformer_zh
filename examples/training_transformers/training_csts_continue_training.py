@@ -21,7 +21,7 @@ from datetime import datetime
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--model", "-m", default='output/bert-base-chinese-cmnli-mean', type=str,
+    parser.add_argument("--model", "-m", default='output/bert-base-chinese-mean-cmnli', type=str,
                         help="model name or model dir")
     parser.add_argument("--num_epochs", "-e", default=10, type=int, help="number of epochs")
     args = parser.parse_args()
@@ -35,7 +35,7 @@ if __name__ == '__main__':
     #### /print debug information to stdout
 
     train_batch_size = 16
-    model_save_path = 'output/training-csts-' + model_name.rstrip("/").split('/')[-1] + '-' + datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    model_save_path = 'output/%s-csts-%s' % (model_name.rstrip("/").split('/')[-1], datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))
     csts_reader = CSTSBenchmarkDataReader('../datasets/CSTS-B', normalize_scores=True)
 
     # Load a pre-trained sentence transformer model
