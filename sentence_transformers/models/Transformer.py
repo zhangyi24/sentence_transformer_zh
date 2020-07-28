@@ -1,5 +1,5 @@
 from torch import nn
-from transformers import AutoModel, AutoTokenizer, AutoConfig, BertTokenizer, AlbertForMaskedLM
+from transformers import AutoModel, AutoTokenizer, AutoConfig, BertTokenizer, AlbertModel, RobertaModel
 import json
 from typing import List, Dict, Optional
 import os
@@ -17,8 +17,11 @@ class Transformer(nn.Module):
 
         config = AutoConfig.from_pretrained(model_name_or_path, **model_args, cache_dir=cache_dir)
         model_type = config.model_type if hasattr(config, 'model_type') else ''
-        if model_type == 'albert':
-            self.model = AlbertForMaskedLM.from_pretrained(model_name_or_path, config=config, cache_dir=cache_dir)
+        if model_type == 'roberta':
+            self.model = RobertaModel.from_pretrained(model_name_or_path, config=config, cache_dir=cache_dir)
+            self.tokenizer = BertTokenizer.from_pretrained(model_name_or_path, cache_dir=cache_dir)
+        elif model_type == 'albert':
+            self.model = AlbertModel.from_pretrained(model_name_or_path, config=config, cache_dir=cache_dir)
             self.tokenizer = BertTokenizer.from_pretrained(model_name_or_path, cache_dir=cache_dir)
         else:
             self.model = AutoModel.from_pretrained(model_name_or_path, config=config, cache_dir=cache_dir)
