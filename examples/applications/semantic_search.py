@@ -6,6 +6,10 @@ we want to find the most similar sentence in this corpus.
 
 This script outputs for various queries the top 5 most similar sentences in the corpus.
 """
+import os
+import sys
+sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', '..'))
+
 from sentence_transformers import SentenceTransformer
 import scipy.spatial
 

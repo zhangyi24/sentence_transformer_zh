@@ -47,7 +47,8 @@ if __name__ == "__main__":
     csts_reader = CSTSBenchmarkDataReader('../datasets/CSTS-B', normalize_scores=True)
 
     # Use Huggingface/transformers model (like BERT, RoBERTa, XLNet, XLM-R) for mapping tokens to embeddings
-    word_embedding_model = models.Transformer(model_name)
+    transformers_cache_dir = os.path.join(os.path.dirname(__file__), '..', '..', 'cache', 'transformers')
+    word_embedding_model = models.Transformer(model_name, cache_dir=transformers_cache_dir)
 
     # Apply mean pooling to get one fixed sized sentence vector
     pooling_model = models.Pooling(word_embedding_model.get_word_embedding_dimension(),

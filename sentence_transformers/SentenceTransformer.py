@@ -36,14 +36,8 @@ class SentenceTransformer(nn.Sequential):
                 model_url = model_name_or_path
                 folder_name = model_url.replace("https://", "").replace("http://", "").replace("/", "_")[:250]
 
-                try:
-                    from torch.hub import _get_torch_home
-                    torch_cache_home = _get_torch_home()
-                except ImportError:
-                    torch_cache_home = os.path.expanduser(
-                        os.getenv('TORCH_HOME', os.path.join(
-                            os.getenv('XDG_CACHE_HOME', '~/.cache'), 'torch')))
-                default_cache_path = os.path.join(torch_cache_home, 'sentence_transformers')
+                cache_root_dir = os.path.join(os.path.dirname(__file__), '..', 'cache')
+                default_cache_path = os.path.join(cache_root_dir, 'sentence_transformers')
                 model_path = os.path.join(default_cache_path, folder_name)
                 os.makedirs(model_path, exist_ok=True)
 
@@ -123,7 +117,7 @@ class SentenceTransformer(nn.Sequential):
         else:
             sentences_tokenized = [self.tokenize(sen) for sen in sentences]
 
-        length_sorted_idx = np.argsort([len(sentences_tokenized) for sen in sentences])
+        length_sorted_idx = np.argsort([len(sen) for sen in sentences])
 
         iterator = range(0, len(sentences), batch_size)
         if show_progress_bar:
