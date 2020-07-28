@@ -1,5 +1,5 @@
 from torch import nn
-from transformers import AutoModel, AutoTokenizer, AutoConfig
+from transformers import AutoModel, AutoTokenizer, AutoConfig, BertTokenizer, AlbertForMaskedLM
 import json
 from typing import List, Dict, Optional
 import os
@@ -16,19 +16,24 @@ class Transformer(nn.Module):
         self.max_seq_length = max_seq_length
 
         config = AutoConfig.from_pretrained(model_name_or_path, **model_args, cache_dir=cache_dir)
-        self.auto_model = AutoModel.from_pretrained(model_name_or_path, config=config, cache_dir=cache_dir)
-        self.tokenizer = AutoTokenizer.from_pretrained(model_name_or_path, cache_dir=cache_dir)
+        model_type = config.model_type if hasattr(config, 'model_type') else ''
+        if model_type == 'albert':
+            self.model = AlbertForMaskedLM.from_pretrained(model_name_or_path, config=config, cache_dir=cache_dir)
+            self.tokenizer = BertTokenizer.from_pretrained(model_name_or_path, cache_dir=cache_dir)
+        else:
+            self.model = AutoModel.from_pretrained(model_name_or_path, config=config, cache_dir=cache_dir)
+            self.tokenizer = AutoTokenizer.from_pretrained(model_name_or_path, cache_dir=cache_dir)
 
 
     def forward(self, features):
         """Returns token_embeddings, cls_token"""
-        output_states = self.auto_model(**features)
+        output_states = self.model(**features)
         output_tokens = output_states[0]
 
         cls_tokens = output_tokens[:, 0, :]  # CLS token is first token
         features.update({'token_embeddings': output_tokens, 'cls_token_embeddings': cls_tokens, 'attention_mask': features['attention_mask']})
 
-        if self.auto_model.config.output_hidden_states:
+        if self.model.config.output_hidden_states:
             all_layer_idx = 2
             if len(output_states) < 3: #Some models only output last_hidden_states and all_hidden_states
                 all_layer_idx = 1
@@ -39,7 +44,7 @@ class Transformer(nn.Module):
         return features
 
     def get_word_embedding_dimension(self) -> int:
-        return self.auto_model.config.hidden_size
+        return self.model.config.hidden_size
 
     def tokenize(self, text: str) -> List[int]:
         """
@@ -64,7 +69,7 @@ class Transformer(nn.Module):
         return {key: self.__dict__[key] for key in self.config_keys}
 
     def save(self, output_path: str):
-        self.auto_model.save_pretrained(output_path)
+        self.model.save_pretrained(output_path)
         self.tokenizer.save_pretrained(output_path)
 
         with open(os.path.join(output_path, 'sentence_bert_config.json'), 'w') as fOut:
