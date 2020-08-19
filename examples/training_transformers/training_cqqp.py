@@ -29,7 +29,7 @@ if __name__ == "__main__":
     parser.add_argument("--num_epochs", "-e", default=10, type=int, help="number of epochs")
     parser.add_argument("--pooling", "-p", default='mean', type=str, help="pooling method",
                         choices=["mean", "cls", "max"])
-    parser.add_argument("--batch_size", "-b", default=16, type=int, help="batch_size")
+    parser.add_argument("--batch_size", "-b", default=32, type=int, help="batch_size")
     args = parser.parse_args()
     model_name = args.model
     num_epochs = args.num_epochs
@@ -82,7 +82,7 @@ if __name__ == "__main__":
     model.fit(train_objectives=[(train_dataloader, train_loss)],
               evaluator=evaluator,
               epochs=num_epochs,
-              evaluation_steps=100,
+              evaluation_steps=1000,
               warmup_steps=warmup_steps,
               output_path=model_save_path)
 
