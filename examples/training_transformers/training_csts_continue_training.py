@@ -24,9 +24,11 @@ if __name__ == '__main__':
     parser.add_argument("--model", "-m", default='output/bert-base-chinese-mean-cmnli', type=str,
                         help="model name or model dir")
     parser.add_argument("--num_epochs", "-e", default=10, type=int, help="number of epochs")
+    parser.add_argument("--batch_size", "-b", default=10, type=int, help="batch size")
     args = parser.parse_args()
     model_name = args.model
     num_epochs = args.num_epochs
+    batch_size = args.batch_size
     #### Just some code to print debug information to stdout
     logging.basicConfig(format='%(asctime)s - %(message)s',
                         datefmt='%Y-%m-%d %H:%M:%S',
@@ -34,7 +36,6 @@ if __name__ == '__main__':
                         handlers=[LoggingHandler()])
     #### /print debug information to stdout
 
-    train_batch_size = 16
     model_save_path = 'output/%s-csts-%s' % (model_name.rstrip("/").split('/')[-1], datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))
     csts_reader = CSTSBenchmarkDataReader('../datasets/CSTS-B', normalize_scores=True)
 
@@ -44,16 +45,16 @@ if __name__ == '__main__':
     # Convert the dataset to a DataLoader ready for training
     logging.info("Read CSTS-B  train dataset")
     train_data = SentencesDataset(csts_reader.get_examples('cnsd-sts-train.txt'), model)
-    train_dataloader = DataLoader(train_data, shuffle=True, batch_size=train_batch_size)
+    train_dataloader = DataLoader(train_data, shuffle=True, batch_size=batch_size)
     train_loss = losses.CosineSimilarityLoss(model=model)
 
     logging.info("Read CSTS-B dev dataset")
     dev_data = SentencesDataset(examples=csts_reader.get_examples('cnsd-sts-dev.txt'), model=model)
-    dev_dataloader = DataLoader(dev_data, shuffle=False, batch_size=train_batch_size)
+    dev_dataloader = DataLoader(dev_data, shuffle=False, batch_size=batch_size)
     evaluator = EmbeddingSimilarityEvaluator(dev_dataloader)
 
     # Configure the training. We skip evaluation in this example
-    warmup_steps = math.ceil(len(train_data) * num_epochs / train_batch_size * 0.1)  # 10% of train data for warm-up
+    warmup_steps = math.ceil(len(train_data) * num_epochs / batch_size * 0.1)  # 10% of train data for warm-up
     logging.info("Warmup-steps: {}".format(warmup_steps))
 
     # Train the model
@@ -66,6 +67,6 @@ if __name__ == '__main__':
 
     model = SentenceTransformer(model_save_path)
     test_data = SentencesDataset(examples=csts_reader.get_examples("cnsd-sts-test.txt"), model=model)
-    test_dataloader = DataLoader(test_data, shuffle=False, batch_size=train_batch_size)
+    test_dataloader = DataLoader(test_data, shuffle=False, batch_size=batch_size)
     evaluator = EmbeddingSimilarityEvaluator(test_dataloader)
     model.evaluate(evaluator)
