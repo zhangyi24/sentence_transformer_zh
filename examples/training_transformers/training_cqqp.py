@@ -33,7 +33,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     model_name = args.model
     num_epochs = args.num_epochs
-    batch_size = args.num_epochs
+    batch_size = args.batch_size
     #### Just some code to print debug information to stdout
     logging.basicConfig(format='%(asctime)s - %(message)s',
                         datefmt='%Y-%m-%d %H:%M:%S',
