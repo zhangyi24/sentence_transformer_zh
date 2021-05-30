@@ -7,7 +7,7 @@ Usage:
 python training_cmnli.py
 
 OR
-python training_nli.py pretrained_transformer_model_name
+python training_cmnli.py pretrained_transformer_model_name
 """
 import os
 import sys
